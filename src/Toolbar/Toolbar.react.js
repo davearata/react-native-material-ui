@@ -10,6 +10,8 @@ import {
     TextInput,
     TouchableWithoutFeedback,
     View,
+    Platform,
+    Easing,
 } from 'react-native';
 /* eslint-enable import/no-unresolved, import/extensions */
 import IconToggle from '../IconToggle';
@@ -51,6 +53,14 @@ const propTypes = {
         * Indicates when input should be focused after the search is opened.
         */
         autoFocus: PropTypes.bool,
+        /**
+        * Enable auto-capitalize for search input
+        */
+        autoCapitalize: PropTypes.string,
+        /**
+        * Enable auto-correct for search input
+        */
+        autoCorrect: PropTypes.bool,
     }),
     /**
     * You can overide any style for the component via this prop
@@ -75,6 +85,10 @@ const propTypes = {
     * it during the animation of toolbar, but I can use the style prop that is much more obvious.
     */
     translucent: PropTypes.bool,
+    /**
+    * Wether or not the Toolbar should show
+    */
+    hidden: PropTypes.bool,
     /**
     * Called when centerElement was pressed.
     * TODO: better to rename to onCenterElementPress
@@ -138,6 +152,7 @@ const propTypes = {
 const defaultProps = {
     elevation: 4, // TODO: probably useless, elevation is defined in getTheme function
     style: {},
+    hidden: false,
 };
 const contextTypes = {
     uiTheme: PropTypes.object.isRequired,
@@ -211,6 +226,7 @@ class Toolbar extends PureComponent {
         this.state = {
             isSearchActive: props.isSearchActive,
             searchValue: '',
+            moveAnimated: new Animated.Value(0),
         };
     }
     componentWillReceiveProps(nextProps) {
@@ -221,6 +237,14 @@ class Toolbar extends PureComponent {
         // searchable is set and isSearchActive is true, then we need to listen back button
         if (nextProps.searchable && this.state.isSearchActive) {
             this.backButtonListener = addBackButtonListener(this.onSearchCloseRequested);
+        }
+        // if hidden prop is changed we animate show or hide
+        if (nextProps.hidden !== this.props.hidden) {
+            if (nextProps.hidden === true) {
+                this.hide();
+            } else {
+                this.show();
+            }
         }
     }
     onMenuPressed = (labels) => {
@@ -260,7 +284,6 @@ class Toolbar extends PureComponent {
             searchable.onSearchPressed();
         }
 
-
         this.setState({
             isSearchActive: true,
             searchValue: '',
@@ -275,7 +298,6 @@ class Toolbar extends PureComponent {
             searchable.onSearchClosed();
         }
 
-
         this.setState({
             isSearchActive: false,
             searchValue: '',
@@ -283,6 +305,25 @@ class Toolbar extends PureComponent {
     };
     focusSearchField() {
         this.searchFieldRef.focus();
+    }
+    show = () => {
+        const { moveAnimated } = this.state;
+        Animated.timing(moveAnimated, {
+            toValue: 0,
+            duration: 225,
+            easing: Easing.bezier(0.0, 0.0, 0.2, 1),
+            useNativeDriver: Platform.OS === 'android',
+        }).start();
+    }
+    hide = () => {
+        const { moveAnimated } = this.state;
+        const styles = getStyles(this.props, this.context, this.state);
+        Animated.timing(moveAnimated, {
+            toValue: (-1 * StyleSheet.flatten(styles.container).height),
+            duration: 195,
+            easing: Easing.bezier(0.4, 0.0, 0.6, 1),
+            useNativeDriver: Platform.OS === 'android',
+        }).start();
     }
     renderLeftElement = (style) => {
         const { searchable, leftElement, onLeftElementPress, size } = this.props;
@@ -338,6 +379,8 @@ class Toolbar extends PureComponent {
                 <TextInput
                     ref={(ref) => { this.searchFieldRef = ref; }}
                     autoFocus={searchable.autoFocus}
+                    autoCapitalize={searchable.autoCapitalize}
+                    autoCorrect={searchable.autoCorrect}
                     onChangeText={this.onSearchTextChanged}
                     onSubmitEditing={searchable.onSubmitEditing}
                     placeholder={searchable.placeholder}
@@ -486,7 +529,13 @@ class Toolbar extends PureComponent {
         const styles = getStyles(this.props, this.context, this.state);
 
         return (
-            <Animated.View style={styles.container}>
+            <Animated.View
+                style={[styles.container, {
+                    transform: [{
+                        translateY: this.state.moveAnimated,
+                    }],
+                }]}
+            >
                 {this.renderLeftElement(styles)}
                 {this.renderCenterElement(styles)}
                 {this.renderRightElement(styles)}

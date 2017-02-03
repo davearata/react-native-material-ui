@@ -114,7 +114,7 @@ function getStyles(props, context, state) {
     const leftElementContainer = {};
 
     if (numberOfLines === 'dynamic') {
-        contentViewContainer.paddingVertical = 8;
+        contentViewContainer.paddingVertical = 16;
         leftElementContainer.alignSelf = 'flex-start';
     }
     if (typeof rightElement !== 'string') {
@@ -167,7 +167,7 @@ function getStyles(props, context, state) {
         ],
         tertiaryText: [
             listItem.tertiaryText,
-            props.style.secondaryText,
+            props.style.tertiaryText,
         ],
         rightElementContainer: [
             listItem.rightElementContainer,
@@ -269,7 +269,8 @@ class ListItem extends PureComponent {
                 secondaryText = centerElement.secondaryText;
                 tertiaryText = centerElement.tertiaryText;
             }
-            const lineNumber = tertiaryText === undefined ? numberOfLines : 1;
+            const secondLineNumber = !tertiaryText ? numberOfLines : 1;
+            const thirdLineNumber = tertiaryText ? numberOfLines : 1;
             content = (
                 <View style={styles.textViewContainer}>
                     <View style={styles.firstLine}>
@@ -281,14 +282,14 @@ class ListItem extends PureComponent {
                     </View>
                     {secondaryText &&
                         <View>
-                            <Text numberOfLines={lineNumber} style={styles.secondaryText}>
+                            <Text numberOfLines={secondLineNumber} style={styles.secondaryText}>
                                 {secondaryText}
                             </Text>
                         </View>
                     }
                     {tertiaryText &&
                         <View>
-                            <Text numberOfLines={lineNumber} style={styles.secondaryText}>
+                            <Text numberOfLines={thirdLineNumber} style={styles.tertiaryText}>
                                 {tertiaryText}
                             </Text>
                         </View>
